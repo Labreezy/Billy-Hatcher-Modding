@@ -1,14 +1,19 @@
+import os
+import os.path as osp
 import tkinter as tk
+from tkinter import filedialog
 from enum import Enum
+import configparser
 
 VERSION=0.1
 
 # SHOULD MOD PATH BE DOCS/BillyMODS OR something?
 # if no path provided, then prompt?
-# Or just store within the billy folder and selectively take the files out and replace them?
-# How does this work with GCN iso archive nonsense?
-# Call C#?
-
+# Or just store within the billy folder and selectively take the files out and replace them? <-- THIS
+# How does this work with GCN iso archive nonsense? // Unpack all .prds from an extracted .iso filesystem, replace as if on pc, repack, start game
+# Call C#? // for the .prd unpacking/packing, yeah, we'd need to leverage shadowth's stuff or port it
+GLOBAL_CONFIG_FN = "loader_config.ini"
+MOD_CONFIG_FN = "mod.ini"
 
 #######################################
 # Setup global unchanging frame content
@@ -118,14 +123,39 @@ class Mod:
     def __repr__(self):
         return self.__str__()
 
+def saveconfig():
+    cfg_path = osp.join(os.getcwd(), GLOBAL_CONFIG_FN)
+    with open(cfg_path, "w") as configf:
+        config.write(configf)
+def initconfig():
+    global config
+    cfg_path = osp.join(os.getcwd(), GLOBAL_CONFIG_FN)
+    config = configparser.ConfigParser()
+    if not osp.exists(cfg_path):
+        config['BILLY_DIR'] = ""
+        with open(cfg_path, 'w') as configfile:
+            config.write(configfile)
+    else:
+        with open(cfg_path, 'r') as configfile:
+            config.readfp(configfile)
+    if config.get("BILLY_DIR") == "":
+        currentScreen = Screen.NO_BILLY_DIRECTORY
+    else:
+        currentScreen = Screen.NO_MOD_LOADED
+
+
+
 def setBillyDirectory():
     # TODO: it should set dir and refresh mod list
     global currentScreen
+    billydir = filedialog.askdirectory(initialdir=os.getcwd(), title="Select Billy Directory")
+    config['BILLY_DIR'] = billydir
     currentScreen = Screen.NO_MOD_LOADED
     refresh()
-    pass
+
 def refreshModList():
     # TODO: parse out mod folders and add to mods list
+
     pass
 
 def clear():
@@ -160,10 +190,13 @@ def refresh():
             if not mod.isEnabled():
                 mod.draw()
 
+
+
+
 mods = []
 mods.append(Mod("hello1"))
-
 mods.append(Mod("hello2"))
 
 refresh()
+initconfig()
 frame.mainloop()
